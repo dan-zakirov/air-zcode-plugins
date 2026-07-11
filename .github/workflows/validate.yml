@@ -1,0 +1,26 @@
+name: Validate plugin
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript
+        shell: bash
+        run: |
+          node --check plugins/russian-language-pack/scripts/runtime-ui-controller.mjs
+          node --check plugins/russian-language-pack/scripts/ru-translations.js
+      - name: Validate manifests
+        shell: bash
+        run: |
+          node -e 'const fs=require("fs"); const root=JSON.parse(fs.readFileSync("marketplace.json","utf8")); const z=JSON.parse(fs.readFileSync("plugins/russian-language-pack/.zcode-plugin/plugin.json","utf8")); const c=JSON.parse(fs.readFileSync("plugins/russian-language-pack/.codex-plugin/plugin.json","utf8")); if(root.plugins[0].version!==z.version||z.version!==c.version) process.exit(1);'

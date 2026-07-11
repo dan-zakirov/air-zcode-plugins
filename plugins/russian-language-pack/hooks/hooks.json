@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${ZCODE_PLUGIN_ROOT}/scripts/run-ui-patch.cmd\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${ZCODE_PLUGIN_ROOT}/scripts/inject-ru.cmd\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

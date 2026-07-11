@@ -1,0 +1,16 @@
+{
+  "name": "air-zcode-plugins",
+  "description": "A.I.R ZCode Plugins - публичная коллекция плагинов для ZCode Desktop.",
+  "interface": {
+    "displayName": "A.I.R ZCode Plugins"
+  },
+  "plugins": [
+    {
+      "name": "russian-language-pack",
+      "version": "0.1.13",
+      "description": "Русский язык и русификатор интерфейса ZCode Desktop 3.3.4 для Windows.",
+      "source": "./plugins/russian-language-pack",
+      "category": "productivity"
+    }
+  ]
+}
