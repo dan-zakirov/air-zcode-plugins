@@ -58,10 +58,11 @@ async function evaluate(client, expression) {
 async function installRuntimeController(translations) {
   const require = process.getBuiltinModule("module").createRequire(process.execPath);
   const { BrowserWindow } = require("electron");
-  const KEY = "__airRussianLanguagePackRuntimeV019";
-  const RENDERER_KEY = "__AIR_RLP_RENDERER_V019__";
-  const TRANSLATIONS_KEY = "__air_rlp_translations_v019";
+  const KEY = "__airRussianLanguagePackRuntimeV014";
+  const RENDERER_KEY = "__AIR_RLP_RENDERER_V014__";
+  const TRANSLATIONS_KEY = "__air_rlp_translations_v014";
 
+  await globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.();
 
   function installRendererRuntime(bundle, russian, runtimeKey) {
@@ -485,10 +486,15 @@ const configPath = join(homedir(), ".zcode", "cli", "config.json");
 const installedPath = join(homedir(), ".zcode", "cli", "plugins", "installed_plugins.json");
 const stateDir = join(homedir(), ".zcode", "air-russian-language-pack");
 const lockPath = join(stateDir, "runtime.lock.json");
+const statePath = join(stateDir, "runtime.state.json");
 const mainPidIndex = process.argv.indexOf("--zcode-pid");
 const mainPid = Number(mainPidIndex >= 0 ? process.argv[mainPidIndex + 1] : 0);
+const runtimeVersionIndex = process.argv.indexOf("--runtime-version");
+const runtimeVersion = String(runtimeVersionIndex >= 0 ? process.argv[runtimeVersionIndex + 1] : "");
+let lastStateFingerprint = "";
 
 if (!Number.isInteger(mainPid) || mainPid <= 0) throw new Error("Missing --zcode-pid");
+if (!runtimeVersion) throw new Error("Missing --runtime-version");
 
 function isAlive(pid) {
   try {
@@ -501,10 +507,25 @@ function isAlive(pid) {
 
 function readJson(path, fallback) {
   try {
-    return JSON.parse(readFileSync(path, "utf8"));
+    return JSON.parse(readFileSync(path, "utf8").replace(/^\uFEFF/, ""));
   } catch {
     return fallback;
   }
+}
+
+function writeRuntimeState(status, details = {}) {
+  mkdirSync(dirname(statePath), { recursive: true });
+  const state = {
+    version: runtimeVersion,
+    pid: process.pid,
+    zcodePid: mainPid,
+    status,
+    ...details,
+  };
+  const fingerprint = JSON.stringify(state);
+  if (fingerprint === lastStateFingerprint) return;
+  lastStateFingerprint = fingerprint;
+  writeFileSync(statePath, JSON.stringify({ ...state, updatedAt: new Date().toISOString() }, null, 2), "utf8");
 }
 
 function currentPlugin() {
@@ -548,7 +569,7 @@ async function connectToMain() {
 
 async function acquireLock() {
   mkdirSync(dirname(lockPath), { recursive: true });
-  const lock = JSON.stringify({ pid: process.pid, zcodePid: mainPid });
+  const lock = JSON.stringify({ pid: process.pid, zcodePid: mainPid, version: runtimeVersion });
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       writeFileSync(lockPath, lock, { encoding: "utf8", flag: "wx" });
@@ -573,16 +594,27 @@ if (!(await acquireLock())) process.exit(0);
 const client = await connectToMain();
 let activeVersion = null;
 let stopping = false;
+let lastStatusAt = 0;
+writeRuntimeState("starting");
 
 async function synchronize() {
   const record = currentPlugin();
   if (record && activeVersion !== record.version) {
+    writeRuntimeState("loading-translations", { pluginVersion: record.version });
     const translations = await loadTranslations(record);
-    await evaluate(client, `(${installRuntimeController.toString()})(${JSON.stringify(translations)})`);
+    writeRuntimeState("installing-runtime", { pluginVersion: record.version });
+    const runtimeStatus = await evaluate(client, `(${installRuntimeController.toString()})(${JSON.stringify(translations)})`);
     activeVersion = record.version;
+    lastStatusAt = Date.now();
+    writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
+  } else if (record && Date.now() - lastStatusAt >= 3000) {
+    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV014?.status?.() || null");
+    lastStatusAt = Date.now();
+    writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (!record && activeVersion !== null) {
-    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.() || null`);
+    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.() || null`);
     activeVersion = null;
+    writeRuntimeState("plugin-disabled");
   }
 }
 
@@ -591,7 +623,7 @@ async function shutdown() {
   stopping = true;
   try {
     if (activeVersion !== null && isAlive(mainPid)) {
-      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.() || null`);
+      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.() || null`);
     }
   } catch {
     // ZCode may already be closing.
@@ -607,8 +639,9 @@ process.on("SIGTERM", () => shutdown().finally(() => process.exit(0)));
 while (!stopping && isAlive(mainPid)) {
   try {
     await synchronize();
-  } catch {
+  } catch (error) {
     // Keep the watcher alive; a renderer reload may temporarily close a target.
+    writeRuntimeState("retrying", { error: error instanceof Error ? error.message : String(error) });
   }
   await new Promise((resolve) => setTimeout(resolve, 750));
 }

@@ -1,52 +1,54 @@
 $ErrorActionPreference = "Stop"
 
-$runtime = $env:ZCODE_NODE_EXECUTABLE
-if ([string]::IsNullOrWhiteSpace($runtime)) {
-    $runtime = Join-Path $env:LOCALAPPDATA "Programs\ZCode\ZCode.exe"
-}
+$pluginRoot = Split-Path -Parent $PSScriptRoot
+$manifestPath = Join-Path $pluginRoot ".zcode-plugin\plugin.json"
+$supervisorSource = Join-Path $PSScriptRoot "runtime-supervisor.ps1"
+$stateDir = Join-Path $env:USERPROFILE ".zcode\air-russian-language-pack"
+$supervisorTarget = Join-Path $stateDir "runtime-supervisor.ps1"
+$supervisorLockPath = Join-Path $stateDir "supervisor.lock.json"
+$powerShell = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
 
-$controller = Join-Path $PSScriptRoot "runtime-ui-controller.mjs"
-if (-not (Test-Path -LiteralPath $runtime) -or -not (Test-Path -LiteralPath $controller)) {
-    [Console]::Error.WriteLine("[russian-language-pack] ZCode runtime files were not found.")
+if (-not (Test-Path -LiteralPath $manifestPath) -or -not (Test-Path -LiteralPath $supervisorSource) -or -not (Test-Path -LiteralPath $powerShell)) {
+    [Console]::Error.WriteLine("[russian-language-pack] Startup runtime files were not found.")
     exit 1
 }
 
-$mainProcess = Get-Process -Name "ZCode" -ErrorAction SilentlyContinue |
-    Where-Object { $_.MainWindowHandle -ne 0 } |
-    Select-Object -First 1
-if ($null -eq $mainProcess) {
-    [Console]::Error.WriteLine("[russian-language-pack] The ZCode main process was not found.")
-    exit 1
-}
+$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$runtimeVersion = [string]$manifest.version
+New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
 
-$lockPath = Join-Path $env:USERPROFILE ".zcode\air-russian-language-pack\runtime.lock.json"
-if (Test-Path -LiteralPath $lockPath) {
+$supervisorRunning = $false
+if (Test-Path -LiteralPath $supervisorLockPath) {
     try {
-        $lock = Get-Content -LiteralPath $lockPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $runningController = Get-Process -Id ([int]$lock.pid) -ErrorAction SilentlyContinue
-        if ($null -ne $runningController -and [int]$lock.zcodePid -eq $mainProcess.Id) {
-            exit 0
+        $lock = Get-Content -LiteralPath $supervisorLockPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $process = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$lock.pid)" -ErrorAction SilentlyContinue
+        $owned = $null -ne $process -and $process.CommandLine -match "runtime-supervisor\.ps1"
+        if ($owned -and [string]$lock.version -eq $runtimeVersion) {
+            $supervisorRunning = $true
+        }
+        elseif ($owned) {
+            Stop-Process -Id ([int]$lock.pid) -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 250
         }
     }
     catch {
-        # A stale or incomplete lock is replaced by the controller.
+        # A stale supervisor lock is replaced below.
     }
 }
 
-$previousElectronRunAsNode = $env:ELECTRON_RUN_AS_NODE
-try {
-    $env:ELECTRON_RUN_AS_NODE = "1"
-    Start-Process -FilePath $runtime `
-        -ArgumentList @("`"$controller`"", "--zcode-pid", "$($mainProcess.Id)") `
+Copy-Item -LiteralPath $supervisorSource -Destination $supervisorTarget -Force
+
+$runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$runValueName = "AIR ZCode Russian Language Pack"
+$startupCommand = "`"$powerShell`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$supervisorTarget`" -RuntimeVersion `"$runtimeVersion`""
+New-Item -Path $runKeyPath -Force | Out-Null
+New-ItemProperty -LiteralPath $runKeyPath -Name $runValueName -Value $startupCommand -PropertyType String -Force | Out-Null
+
+if (-not $supervisorRunning) {
+    Remove-Item -LiteralPath $supervisorLockPath -Force -ErrorAction SilentlyContinue
+    Start-Process -FilePath $powerShell `
+        -ArgumentList @("-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$supervisorTarget`"", "-RuntimeVersion", "`"$runtimeVersion`"") `
         -WindowStyle Hidden | Out-Null
-}
-finally {
-    if ($null -eq $previousElectronRunAsNode) {
-        Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
-    }
-    else {
-        $env:ELECTRON_RUN_AS_NODE = $previousElectronRunAsNode
-    }
 }
 
 exit 0

@@ -20,6 +20,21 @@ jobs:
         run: |
           node --check plugins/russian-language-pack/scripts/runtime-ui-controller.mjs
           node --check plugins/russian-language-pack/scripts/ru-translations.js
+      - name: Check Windows runtime
+        shell: pwsh
+        run: |
+          $files = @(
+            "plugins/russian-language-pack/scripts/run-ui-patch.ps1",
+            "plugins/russian-language-pack/scripts/runtime-supervisor.ps1"
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$errors)
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "plugins/russian-language-pack/scripts/runtime-supervisor.ps1" -SelfTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate manifests
         shell: bash
         run: |
