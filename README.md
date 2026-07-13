@@ -5,6 +5,8 @@
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 ![License](https://img.shields.io/badge/license-MIT-16A34A)
 
+<img width="1140" height="640" alt="image" src="https://github.com/user-attachments/assets/12c7619b-5433-4475-82d4-c95d50351078" />
+
 **Russian Language Pack** - бесплатный плагин русского языка и русификатор интерфейса ZCode Desktop для Windows 10 и Windows 11. Плагин добавляет пункт **Русский** в настройки обычного ZCode, переводит интерфейс и помогает AI отвечать на русском языке.
 
 Репозиторий входит в **A.I.R ZCode Plugins** и распространяется с открытым исходным кодом. Отдельная русская сборка ZCode не требуется: локализация устанавливается через стандартный каталог плагинов приложения.
