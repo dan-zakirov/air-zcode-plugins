@@ -58,10 +58,11 @@ async function evaluate(client, expression) {
 async function installRuntimeController(translations) {
   const require = process.getBuiltinModule("module").createRequire(process.execPath);
   const { BrowserWindow } = require("electron");
-  const KEY = "__airRussianLanguagePackRuntimeV014";
-  const RENDERER_KEY = "__AIR_RLP_RENDERER_V014__";
-  const TRANSLATIONS_KEY = "__air_rlp_translations_v014";
+  const KEY = "__airRussianLanguagePackRuntimeV015";
+  const RENDERER_KEY = "__AIR_RLP_RENDERER_V015__";
+  const TRANSLATIONS_KEY = "__air_rlp_translations_v015";
 
+  await globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.();
 
@@ -275,20 +276,26 @@ async function installRuntimeController(translations) {
     return { lineNumber, columnNumber: offset - lastNewline - 1 };
   }
 
+  function findEnglishBundle(source) {
+    const match = /([A-Za-z_$][\w$]*)=\{(?="common\.loading":(?:`Loading\.\.\.`|"Loading\.\.\."|'Loading\.\.\.'))/.exec(source);
+    if (!match) throw new Error("en-US bundle assignment not found");
+    const objectStart = match.index + match[0].lastIndexOf("{");
+    const objectEnd = findObjectEnd(source, objectStart);
+    if (objectEnd < 0) throw new Error("en-US bundle end not found");
+    return { identifier: match[1], objectEnd };
+  }
+
   function buildBootstrap(activeTranslations, source = null) {
     const translated = Object.keys(activeTranslations).length;
     if (translated < 3000) throw new Error(`Only ${translated} translations supplied`);
     const result = {
       stageSource: `localStorage.setItem(${JSON.stringify(TRANSLATIONS_KEY)},${JSON.stringify(JSON.stringify(activeTranslations))})`,
-      expression: `(${installRendererRuntime.toString()})(Db,JSON.parse(localStorage.getItem(${JSON.stringify(TRANSLATIONS_KEY)})),${JSON.stringify(RENDERER_KEY)})`,
       translated,
     };
     if (source !== null) {
-      const bundleIndex = source.indexOf("Db={");
-      if (bundleIndex < 0) throw new Error("en-US bundle Db not found");
-      const objectEnd = findObjectEnd(source, bundleIndex + 3);
-      if (objectEnd < 0) throw new Error("en-US bundle end not found");
-      result.location = sourceLocation(source, objectEnd + 2);
+      const bundle = findEnglishBundle(source);
+      result.expression = `(${installRendererRuntime.toString()})(${bundle.identifier},JSON.parse(localStorage.getItem(${JSON.stringify(TRANSLATIONS_KEY)})),${JSON.stringify(RENDERER_KEY)})`;
+      result.location = sourceLocation(source, bundle.objectEnd + 2);
     }
     return result;
   }
@@ -608,11 +615,11 @@ async function synchronize() {
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (record && Date.now() - lastStatusAt >= 3000) {
-    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV014?.status?.() || null");
+    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV015?.status?.() || null");
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (!record && activeVersion !== null) {
-    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.() || null`);
+    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.() || null`);
     activeVersion = null;
     writeRuntimeState("plugin-disabled");
   }
@@ -623,7 +630,7 @@ async function shutdown() {
   stopping = true;
   try {
     if (activeVersion !== null && isAlive(mainPid)) {
-      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.() || null`);
+      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.() || null`);
     }
   } catch {
     // ZCode may already be closing.

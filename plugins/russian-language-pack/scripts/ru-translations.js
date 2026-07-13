@@ -1,5 +1,5 @@
-// Generated from the real ZCode 3.3.4 en-US bundle.
-// Source keys: 3709; source fingerprint: 2f2e16ee4f44.
+// Generated from the real ZCode 3.3.5 en-US bundle.
+// Source keys: 3737; source fingerprint: 4fad76c03d9d.
 // Existing hand-written translations override machine-generated values.
 
 export const RU_TRANSLATIONS = {
@@ -1824,6 +1824,8 @@ export const RU_TRANSLATIONS = {
   "settings.modelProvider.codingPlan.viewPrices": "Посмотреть цены",
   "settings.modelProvider.codingPlan.productsLoading": "Загрузка плана кодирования",
   "settings.modelProvider.codingPlan.productsLoadingDescription": "Получение последних планов и цен от {provider}.",
+  "settings.modelProvider.codingPlan.purchase.authStateError": "Не удалось проверить вход. Повторите попытку.",
+  "settings.modelProvider.codingPlan.purchase.authStateRetry": "Повторить проверку входа",
   "settings.modelProvider.codingPlan.productsError": "Не удалось загрузить планы.",
   "settings.modelProvider.codingPlan.productsReconnectTitle": "Подключитесь, чтобы просмотреть планы",
   "settings.modelProvider.codingPlan.reconnectToViewPlans": "Восстановить соединение",
@@ -3100,6 +3102,7 @@ export const RU_TRANSLATIONS = {
   "chat.toolCall.status.completed": "Завершено",
   "chat.toolCall.status.failed": "Ошибка",
   "chat.toolCall.status.denied": "Отклонено",
+  "chat.toolCall.status.stopped": "Остановлено",
   "chat.toolCall.expandDetails": "Развернуть детали инструмента",
   "chat.toolCall.collapseDetails": "Свернуть детали инструмента",
   "chat.toolCall.childCount": "{count} дочерние инструменты",
@@ -3126,6 +3129,25 @@ export const RU_TRANSLATIONS = {
   "chat.toolCall.execute.execute": "Выполнить",
   "chat.toolCall.execute.terminal": "Терминал",
   "chat.toolCall.execute.noOutput": "Нет вывода.",
+  "chat.toolCall.sendMessage.sending": "Отправка",
+  "chat.toolCall.sendMessage.sent": "Отправлено",
+  "chat.toolCall.sendMessage.failed": "Сообщение не отправлено",
+  "chat.toolCall.sendMessage.denied": "Отправка отклонена",
+  "chat.toolCall.sendMessage.stopped": "Отправка остановлена",
+  "chat.toolCall.sendMessage.target": "Целевой субагент",
+  "chat.toolCall.sendMessage.summary": "Сводка",
+  "chat.toolCall.sendMessage.message": "Сообщение",
+  "chat.toolCall.sendMessage.to": "Кому",
+  "chat.toolCall.taskStop.stopping": "Остановка",
+  "chat.toolCall.taskStop.stopped": "Остановлено",
+  "chat.toolCall.taskStop.failed": "Не удалось остановить задачу",
+  "chat.toolCall.taskStop.denied": "Остановка отклонена",
+  "chat.toolCall.taskStop.cancelled": "Остановка отменена",
+  "chat.toolCall.taskStop.taskType": "Тип задачи",
+  "chat.toolCall.taskStop.command": "Команда",
+  "chat.toolCall.taskStop.description": "Описание задачи",
+  "chat.toolCall.taskStop.result": "Результат",
+  "chat.toolCall.taskStop.truncated": "Часть сведений о задаче сокращена.",
   "chat.toolCall.skill.running": "Запуск skill",
   "chat.toolCall.skill.ran": "Выполнен skill",
   "chat.toolCall.skill.label": "Skill",
@@ -3278,6 +3300,12 @@ export const RU_TRANSLATIONS = {
   "chat.permission.keyboardHint": "Используйте клавиши Tab/стрелки для выбора, затем нажмите Enter для подтверждения.",
   "chat.interactionOrigin.subagent": "Субагент",
   "chat.interactionOrigin.subagent.title": "Запрос от субагента: {agentType}",
+  "chat.cuaPermission.openAccessibility": "Открыть настройки универсального доступа",
+  "chat.cuaPermission.openScreenRecording": "Открыть запись экрана",
+  "chat.cuaPermission.opening": "Открытие...",
+  "chat.cuaPermission.openFailed": "Не удалось открыть разрешения CUA: {error}",
+  "chat.cuaPermission.dragTitle": "ZCode CUA Helper.app",
+  "chat.cuaPermission.helperPathHint": "Перетащите Helper в список разрешений macOS и предоставьте доступ ему, а не Python, Terminal, uvx или старому пути.",
   "chat.elicitation.title": "Требуется ввод данных",
   "chat.elicitation.keyboardHint": "Используйте клавиши Tab/стрелки для выбора, затем Enter или пробел для выбора.",
   "chat.elicitation.customAnswer": "Пользовательский ответ",
