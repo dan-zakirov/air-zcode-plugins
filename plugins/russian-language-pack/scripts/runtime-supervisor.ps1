@@ -184,14 +184,14 @@ if ($SelfTest) {
         $testConfig = Join-Path $testRoot "config.json"
         $testInstalled = Join-Path $testRoot "installed.json"
         @{ plugins = @{ enabledPlugins = @{ $PluginId = $true } } } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testConfig -Encoding UTF8
-        @{ plugins = @(@{ id = $PluginId; version = "0.1.15"; installPath = $testRoot }) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testInstalled -Encoding UTF8
+        @{ plugins = @(@{ id = $PluginId; version = "0.1.16"; installPath = $testRoot }) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testInstalled -Encoding UTF8
         if (-not (Test-PluginEnabled -Path $testConfig)) { throw "Enabled plugin was not detected." }
         if (Test-PluginEnabled -Path (Join-Path $testRoot "missing-config.json")) { throw "Missing config was detected as enabled." }
         $testPlugin = Get-InstalledPlugin -Path $testInstalled
-        if ($testPlugin.version -ne "0.1.15") { throw "Installed plugin version was not detected." }
+        if ($testPlugin.version -ne "0.1.16") { throw "Installed plugin version was not detected." }
         if ($null -ne (Get-InstalledPlugin -Path (Join-Path $testRoot "missing-installed.json"))) { throw "Missing plugin was detected as installed." }
-        $fingerprintA = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.15"; status = "active"; updatedAt = "first" })
-        $fingerprintB = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.15"; status = "active"; updatedAt = "second" })
+        $fingerprintA = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.16"; status = "active"; updatedAt = "first" })
+        $fingerprintB = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.16"; status = "active"; updatedAt = "second" })
         if ($fingerprintA -ne $fingerprintB) { throw "State timestamp changed the fingerprint." }
         Write-Output "runtime-supervisor self-test passed"
         exit 0

@@ -58,10 +58,11 @@ async function evaluate(client, expression) {
 async function installRuntimeController(translations) {
   const require = process.getBuiltinModule("module").createRequire(process.execPath);
   const { BrowserWindow } = require("electron");
-  const KEY = "__airRussianLanguagePackRuntimeV015";
-  const RENDERER_KEY = "__AIR_RLP_RENDERER_V015__";
-  const TRANSLATIONS_KEY = "__air_rlp_translations_v015";
+  const KEY = "__airRussianLanguagePackRuntimeV016";
+  const RENDERER_KEY = "__AIR_RLP_RENDERER_V016__";
+  const TRANSLATIONS_KEY = "__air_rlp_translations_v016";
 
+  await globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.();
   await globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.();
@@ -615,11 +616,11 @@ async function synchronize() {
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (record && Date.now() - lastStatusAt >= 3000) {
-    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV015?.status?.() || null");
+    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV016?.status?.() || null");
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (!record && activeVersion !== null) {
-    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.() || null`);
+    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV016?.deactivate?.() || null`);
     activeVersion = null;
     writeRuntimeState("plugin-disabled");
   }
@@ -630,7 +631,7 @@ async function shutdown() {
   stopping = true;
   try {
     if (activeVersion !== null && isAlive(mainPid)) {
-      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.() || null`);
+      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV016?.deactivate?.() || null`);
     }
   } catch {
     // ZCode may already be closing.
