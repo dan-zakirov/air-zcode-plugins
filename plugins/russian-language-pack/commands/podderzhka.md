@@ -9,7 +9,7 @@ skills: russian-response,russian-setup-guide
 - marketplace: `https://github.com/dan-zakirov/air-zcode-plugins` без `/` в конце;
 - после первого **Get** один раз открой новую задачу, перезапуск ZCode не нужен;
 - выбери **Settings > General > Language > Русский**;
-- версия 0.1.16 работает в памяти обычного ZCode на Windows, не изменяет `app.asar` и автоматически восстанавливается после перезапуска;
+- версия 0.1.17 работает в памяти обычного ZCode на Windows, не изменяет `app.asar` и автоматически восстанавливается после перезапуска;
 - выключение плагина убирает русский язык и перевод, включение возвращает их онлайн;
 - runtime state: `~/.zcode/air-russian-language-pack/runtime.state.json`, рабочее состояние - `status: active` и `runtimeStatus.patched: true`;
 - supervisor state: `~/.zcode/air-russian-language-pack/supervisor.state.json`;

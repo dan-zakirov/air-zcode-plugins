@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 const translationsPath = new URL("./ru-translations.js", import.meta.url);
 const { RU_TRANSLATIONS } = await import(`${translationsPath.href}?now=${Date.now()}`);
@@ -29,18 +28,33 @@ class InspectorClient {
   }
 }
 
-async function connect() {
-  const targets = await fetch("http://127.0.0.1:9229/json/list").then((response) => response.json());
-  const target = targets.find((item) => item.type === "node" && item.webSocketDebuggerUrl);
-  if (!target) throw new Error("Node inspector target not found");
-  const socket = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    socket.addEventListener("open", resolve, { once: true });
-    socket.addEventListener("error", reject, { once: true });
-  });
-  const client = new InspectorClient(socket);
-  await client.send("Runtime.enable");
-  return client;
+async function connect(expectedPid) {
+  for (let port = 9229; port <= 9250; port++) {
+    let targets;
+    try {
+      targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
+    } catch {
+      continue;
+    }
+    for (const target of targets) {
+      if (target.type !== "node" || !target.webSocketDebuggerUrl) continue;
+      const socket = new WebSocket(target.webSocketDebuggerUrl);
+      try {
+        await new Promise((resolve, reject) => {
+          socket.addEventListener("open", resolve, { once: true });
+          socket.addEventListener("error", reject, { once: true });
+        });
+        const client = new InspectorClient(socket);
+        await client.send("Runtime.enable");
+        const pid = await evaluate(client, "process.pid");
+        if (Number(pid) === expectedPid) return client;
+      } catch {
+        // Continue through inspector targets until the requested ZCode process is found.
+      }
+      socket.close();
+    }
+  }
+  throw new Error(`Node inspector target for ZCode PID ${expectedPid} was not found`);
 }
 
 async function evaluate(client, expression) {
@@ -58,14 +72,15 @@ async function evaluate(client, expression) {
 async function installRuntimeController(translations) {
   const require = process.getBuiltinModule("module").createRequire(process.execPath);
   const { BrowserWindow } = require("electron");
-  const KEY = "__airRussianLanguagePackRuntimeV016";
-  const RENDERER_KEY = "__AIR_RLP_RENDERER_V016__";
-  const TRANSLATIONS_KEY = "__air_rlp_translations_v016";
+  const KEY = "__airRussianLanguagePackRuntimeV017";
+  const RENDERER_KEY = "__AIR_RLP_RENDERER_V017__";
+  const TRANSLATIONS_KEY = "__air_rlp_translations_v017";
 
-  await globalThis.__airRussianLanguagePackRuntimeV015?.deactivate?.();
-  await globalThis.__airRussianLanguagePackRuntimeV014?.deactivate?.();
-  await globalThis.__airRussianLanguagePackRuntimeV019?.deactivate?.();
-  await globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.();
+  for (const name of Object.getOwnPropertyNames(globalThis)) {
+    if (/^__airRussianLanguagePackRuntimeV\d+$/.test(name) && name !== KEY) {
+      await globalThis[name]?.deactivate?.();
+    }
+  }
 
   function installRendererRuntime(bundle, russian, runtimeKey) {
     const preferenceKey = "air-russian-language-pack.locale";
@@ -540,21 +555,12 @@ function currentPlugin() {
   const config = readJson(configPath, {});
   const installed = readJson(installedPath, { plugins: [] });
   const enabled = config?.plugins?.enabledPlugins?.[PLUGIN_ID] === true;
-  const record = installed.plugins?.find((plugin) => plugin.id === PLUGIN_ID) || null;
-  return enabled && record ? record : null;
+  const installedRecord = installed.plugins?.find((plugin) => plugin.id === PLUGIN_ID) || null;
+  return enabled && installedRecord ? { version: runtimeVersion } : null;
 }
 
-async function loadTranslations(record) {
-  const candidate = record?.installPath
-    ? join(record.installPath, "scripts", "ru-translations.js")
-    : null;
-  if (!candidate) return RU_TRANSLATIONS;
-  try {
-    const module = await import(`${pathToFileURL(candidate).href}?version=${encodeURIComponent(record.version)}&now=${Date.now()}`);
-    return module.RU_TRANSLATIONS || RU_TRANSLATIONS;
-  } catch {
-    return RU_TRANSLATIONS;
-  }
+async function loadTranslations() {
+  return RU_TRANSLATIONS;
 }
 
 async function connectToMain() {
@@ -566,7 +572,7 @@ async function connectToMain() {
   let lastError = null;
   for (let attempt = 0; attempt < 40; attempt++) {
     try {
-      return await connect();
+      return await connect(mainPid);
     } catch (error) {
       lastError = error;
       await new Promise((resolve) => setTimeout(resolve, 250));
@@ -609,18 +615,18 @@ async function synchronize() {
   const record = currentPlugin();
   if (record && activeVersion !== record.version) {
     writeRuntimeState("loading-translations", { pluginVersion: record.version });
-    const translations = await loadTranslations(record);
+    const translations = await loadTranslations();
     writeRuntimeState("installing-runtime", { pluginVersion: record.version });
     const runtimeStatus = await evaluate(client, `(${installRuntimeController.toString()})(${JSON.stringify(translations)})`);
     activeVersion = record.version;
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (record && Date.now() - lastStatusAt >= 3000) {
-    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV016?.status?.() || null");
+    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV017?.status?.() || null");
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (!record && activeVersion !== null) {
-    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV016?.deactivate?.() || null`);
+    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV017?.deactivate?.() || null`);
     activeVersion = null;
     writeRuntimeState("plugin-disabled");
   }
@@ -631,7 +637,7 @@ async function shutdown() {
   stopping = true;
   try {
     if (activeVersion !== null && isAlive(mainPid)) {
-      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV016?.deactivate?.() || null`);
+      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV017?.deactivate?.() || null`);
     }
   } catch {
     // ZCode may already be closing.

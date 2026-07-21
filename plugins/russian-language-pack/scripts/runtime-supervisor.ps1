@@ -14,6 +14,7 @@ $InstalledPath = Join-Path $env:USERPROFILE ".zcode\cli\plugins\installed_plugin
 $RuntimeLockPath = Join-Path $StateDir "runtime.lock.json"
 $SupervisorLockPath = Join-Path $StateDir "supervisor.lock.json"
 $SupervisorStatePath = Join-Path $StateDir "supervisor.state.json"
+$RuntimeControllerPath = Join-Path $StateDir "runtime-ui-controller.mjs"
 
 function Read-JsonFile {
     param([string]$Path, $Fallback)
@@ -80,7 +81,7 @@ function Get-ZCodeMainProcess {
             $_.CommandLine -notmatch "--type=" -and
             $_.CommandLine -notmatch "zcode\.cjs|runtime-ui-controller\.mjs"
         } |
-        Sort-Object CreationDate
+        Sort-Object CreationDate -Descending
     return $processes | Select-Object -First 1
 }
 
@@ -147,16 +148,14 @@ function Test-CurrentController {
 
 function Start-RuntimeController {
     param(
-        $Plugin,
         $ZCodeProcess
     )
 
-    $controllerPath = Join-Path ([string]$Plugin.installPath) "scripts\runtime-ui-controller.mjs"
     $runtimePath = [string]$ZCodeProcess.ExecutablePath
     if ([string]::IsNullOrWhiteSpace($runtimePath)) {
         $runtimePath = Join-Path $env:LOCALAPPDATA "Programs\ZCode\ZCode.exe"
     }
-    if (-not (Test-Path -LiteralPath $controllerPath) -or -not (Test-Path -LiteralPath $runtimePath)) {
+    if (-not (Test-Path -LiteralPath $RuntimeControllerPath) -or -not (Test-Path -LiteralPath $runtimePath)) {
         throw "ZCode runtime files were not found."
     }
 
@@ -164,7 +163,7 @@ function Start-RuntimeController {
     try {
         $env:ELECTRON_RUN_AS_NODE = "1"
         Start-Process -FilePath $runtimePath `
-            -ArgumentList @("`"$controllerPath`"", "--zcode-pid", "$($ZCodeProcess.ProcessId)", "--runtime-version", "`"$($Plugin.version)`"") `
+            -ArgumentList @("`"$RuntimeControllerPath`"", "--zcode-pid", "$($ZCodeProcess.ProcessId)", "--runtime-version", "`"$RuntimeVersion`"") `
             -WindowStyle Hidden | Out-Null
     }
     finally {
@@ -184,14 +183,14 @@ if ($SelfTest) {
         $testConfig = Join-Path $testRoot "config.json"
         $testInstalled = Join-Path $testRoot "installed.json"
         @{ plugins = @{ enabledPlugins = @{ $PluginId = $true } } } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testConfig -Encoding UTF8
-        @{ plugins = @(@{ id = $PluginId; version = "0.1.16"; installPath = $testRoot }) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testInstalled -Encoding UTF8
+        @{ plugins = @(@{ id = $PluginId; version = "0.1.17"; installPath = $testRoot }) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $testInstalled -Encoding UTF8
         if (-not (Test-PluginEnabled -Path $testConfig)) { throw "Enabled plugin was not detected." }
         if (Test-PluginEnabled -Path (Join-Path $testRoot "missing-config.json")) { throw "Missing config was detected as enabled." }
         $testPlugin = Get-InstalledPlugin -Path $testInstalled
-        if ($testPlugin.version -ne "0.1.16") { throw "Installed plugin version was not detected." }
+        if ($testPlugin.version -ne "0.1.17") { throw "Installed plugin version was not detected." }
         if ($null -ne (Get-InstalledPlugin -Path (Join-Path $testRoot "missing-installed.json"))) { throw "Missing plugin was detected as installed." }
-        $fingerprintA = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.16"; status = "active"; updatedAt = "first" })
-        $fingerprintB = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.16"; status = "active"; updatedAt = "second" })
+        $fingerprintA = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.17"; status = "active"; updatedAt = "first" })
+        $fingerprintB = Get-StateFingerprint -Payload ([ordered]@{ version = "0.1.17"; status = "active"; updatedAt = "second" })
         if ($fingerprintA -ne $fingerprintB) { throw "State timestamp changed the fingerprint." }
         Write-Output "runtime-supervisor self-test passed"
         exit 0
@@ -238,22 +237,22 @@ try {
 
             $missingPluginChecks = 0
             if (-not (Test-PluginEnabled -Path $ConfigPath)) {
-                Set-SupervisorState -Status "plugin-disabled" -Details @{ pluginVersion = [string]$plugin.version }
+                Set-SupervisorState -Status "plugin-disabled" -Details @{ pluginVersion = $RuntimeVersion }
                 Start-Sleep -Seconds 1
                 continue
             }
 
             $zcode = Get-ZCodeMainProcess
             if ($null -eq $zcode) {
-                Set-SupervisorState -Status "waiting-for-zcode" -Details @{ pluginVersion = [string]$plugin.version }
+                Set-SupervisorState -Status "waiting-for-zcode" -Details @{ pluginVersion = $RuntimeVersion }
                 Start-Sleep -Seconds 1
                 continue
             }
 
-            if (Test-CurrentController -ZCodePid ([int]$zcode.ProcessId) -Version ([string]$plugin.version)) {
+            if (Test-CurrentController -ZCodePid ([int]$zcode.ProcessId) -Version $RuntimeVersion) {
                 $runtimeLock = Read-JsonFile -Path $RuntimeLockPath -Fallback $null
                 Set-SupervisorState -Status "active" -Details @{
-                    pluginVersion = [string]$plugin.version
+                    pluginVersion = $RuntimeVersion
                     zcodePid = [int]$zcode.ProcessId
                     controllerPid = [int]$runtimeLock.pid
                 }
@@ -262,10 +261,10 @@ try {
             }
 
             Set-SupervisorState -Status "starting-runtime" -Details @{
-                pluginVersion = [string]$plugin.version
+                pluginVersion = $RuntimeVersion
                 zcodePid = [int]$zcode.ProcessId
             }
-            Start-RuntimeController -Plugin $plugin -ZCodeProcess $zcode
+            Start-RuntimeController -ZCodeProcess $zcode
             Start-Sleep -Seconds 2
         }
         catch {

@@ -3,12 +3,16 @@ $ErrorActionPreference = "Stop"
 $pluginRoot = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $pluginRoot ".zcode-plugin\plugin.json"
 $supervisorSource = Join-Path $PSScriptRoot "runtime-supervisor.ps1"
+$controllerSource = Join-Path $PSScriptRoot "runtime-ui-controller.mjs"
+$translationsSource = Join-Path $PSScriptRoot "ru-translations.js"
 $stateDir = Join-Path $env:USERPROFILE ".zcode\air-russian-language-pack"
 $supervisorTarget = Join-Path $stateDir "runtime-supervisor.ps1"
+$controllerTarget = Join-Path $stateDir "runtime-ui-controller.mjs"
+$translationsTarget = Join-Path $stateDir "ru-translations.js"
 $supervisorLockPath = Join-Path $stateDir "supervisor.lock.json"
 $powerShell = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
 
-if (-not (Test-Path -LiteralPath $manifestPath) -or -not (Test-Path -LiteralPath $supervisorSource) -or -not (Test-Path -LiteralPath $powerShell)) {
+if (-not (Test-Path -LiteralPath $manifestPath) -or -not (Test-Path -LiteralPath $supervisorSource) -or -not (Test-Path -LiteralPath $controllerSource) -or -not (Test-Path -LiteralPath $translationsSource) -or -not (Test-Path -LiteralPath $powerShell)) {
     [Console]::Error.WriteLine("[russian-language-pack] Startup runtime files were not found.")
     exit 1
 }
@@ -37,6 +41,8 @@ if (Test-Path -LiteralPath $supervisorLockPath) {
 }
 
 Copy-Item -LiteralPath $supervisorSource -Destination $supervisorTarget -Force
+Copy-Item -LiteralPath $controllerSource -Destination $controllerTarget -Force
+Copy-Item -LiteralPath $translationsSource -Destination $translationsTarget -Force
 
 $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $runValueName = "AIR ZCode Russian Language Pack"

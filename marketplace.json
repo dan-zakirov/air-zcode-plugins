@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "russian-language-pack",
-      "version": "0.1.16",
+      "version": "0.1.17",
       "description": "Русский язык и русификатор интерфейса ZCode Desktop 3.3.6 для Windows.",
       "source": "./plugins/russian-language-pack",
       "category": "productivity"
