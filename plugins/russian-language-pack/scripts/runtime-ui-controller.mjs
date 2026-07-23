@@ -72,9 +72,9 @@ async function evaluate(client, expression) {
 async function installRuntimeController(translations) {
   const require = process.getBuiltinModule("module").createRequire(process.execPath);
   const { BrowserWindow } = require("electron");
-  const KEY = "__airRussianLanguagePackRuntimeV017";
-  const RENDERER_KEY = "__AIR_RLP_RENDERER_V017__";
-  const TRANSLATIONS_KEY = "__air_rlp_translations_v017";
+  const KEY = "__airRussianLanguagePackRuntimeV018";
+  const RENDERER_KEY = "__AIR_RLP_RENDERER_V018__";
+  const TRANSLATIONS_KEY = "__air_rlp_translations_v018";
 
   for (const name of Object.getOwnPropertyNames(globalThis)) {
     if (/^__airRussianLanguagePackRuntimeV\d+$/.test(name) && name !== KEY) {
@@ -622,11 +622,11 @@ async function synchronize() {
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (record && Date.now() - lastStatusAt >= 3000) {
-    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV017?.status?.() || null");
+    const runtimeStatus = await evaluate(client, "globalThis.__airRussianLanguagePackRuntimeV018?.status?.() || null");
     lastStatusAt = Date.now();
     writeRuntimeState("active", { pluginVersion: record.version, runtimeStatus });
   } else if (!record && activeVersion !== null) {
-    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV017?.deactivate?.() || null`);
+    await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.() || null`);
     activeVersion = null;
     writeRuntimeState("plugin-disabled");
   }
@@ -637,7 +637,7 @@ async function shutdown() {
   stopping = true;
   try {
     if (activeVersion !== null && isAlive(mainPid)) {
-      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV017?.deactivate?.() || null`);
+      await evaluate(client, `globalThis.__airRussianLanguagePackRuntimeV018?.deactivate?.() || null`);
     }
   } catch {
     // ZCode may already be closing.
