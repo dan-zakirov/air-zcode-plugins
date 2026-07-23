@@ -1,6 +1,6 @@
 # Russian Language Pack для ZCode на Windows
 
-Плагин A.I.R ZCode Plugins версии 0.1.18 добавляет русский язык и перевод интерфейса в обычный ZCode Desktop 3.4.2 на Windows 10 и Windows 11.
+Плагин A.I.R ZCode Plugins версии 0.1.19 добавляет русский язык и перевод интерфейса в обычный ZCode Desktop 3.4.2 на Windows 10 и Windows 11.
 
 ---
 
