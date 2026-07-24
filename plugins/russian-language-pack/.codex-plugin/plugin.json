@@ -1,7 +1,7 @@
 {
   "name": "russian-language-pack",
-  "version": "0.1.19",
-  "description": "Русский язык и русификатор интерфейса ZCode Desktop 3.4.2 для Windows.",
+  "version": "0.1.20",
+  "description": "Русский язык и русификатор интерфейса ZCode Desktop 3.5.2 для Windows.",
   "author": {
     "name": "Dan Zakirov"
   },
@@ -10,7 +10,7 @@
   "interface": {
     "displayName": "Russian Language Pack",
     "shortDescription": "Русский язык для ZCode на Windows: интерфейс + AI",
-    "longDescription": "Русская локализация и русификатор ZCode Desktop 3.4.2 для Windows 10 и 11 от A.I.R ZCode Plugins. Работает в памяти обычного ZCode, не меняет app.asar и полностью отключается вместе с плагином.",
+    "longDescription": "Русская локализация и русификатор ZCode Desktop 3.5.2 для Windows 10 и 11 от A.I.R ZCode Plugins. Работает в памяти обычного ZCode, не меняет app.asar и полностью отключается вместе с плагином.",
     "developerName": "A.I.R",
     "category": "Productivity",
     "capabilities": [
