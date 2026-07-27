@@ -1,7 +1,7 @@
 # Русский язык для ZCode на Windows - русификатор ZCode Desktop
 
-![Release](https://img.shields.io/badge/release-v0.1.20-111827)
-![ZCode](https://img.shields.io/badge/ZCode-3.5.2-2563EB)
+![Release](https://img.shields.io/badge/release-v0.1.21-111827)
+![ZCode](https://img.shields.io/badge/ZCode-3.5.3-2563EB)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 ![License](https://img.shields.io/badge/license-MIT-16A34A)
 
@@ -17,7 +17,7 @@
 
 ## Что переводит русификатор ZCode
 
-Russian Language Pack добавляет русскую локализацию в основные разделы ZCode Desktop 3.5.2:
+Russian Language Pack добавляет русскую локализацию в основные разделы ZCode Desktop 3.5.3:
 
 * главное окно и навигацию;
 * настройки приложения, моделей, плагинов, skills и MCP-серверов;
@@ -105,8 +105,8 @@ Russian Language Pack добавляет русскую локализацию �
 | Компонент | Поддержка |
 |----------|-----------|
 | Операционная система | Windows 10 и Windows 11 |
-| ZCode Desktop | 3.5.2 |
-| Версия плагина | 0.1.20 |
+| ZCode Desktop | 3.5.3 |
+| Версия плагина | 0.1.21 |
 | Архитектура Windows | x64 |
 | Внешние зависимости | Не требуются |
 
@@ -118,7 +118,7 @@ Russian Language Pack добавляет русскую локализацию �
 
 ### Есть ли русский язык в ZCode Desktop
 
-В стандартном списке языков ZCode Desktop 3.5.2 русского языка нет. Russian Language Pack добавляет пункт **Русский** через систему плагинов.
+В стандартном списке языков ZCode Desktop 3.5.3 русского языка нет. Russian Language Pack добавляет пункт **Русский** через систему плагинов.
 
 ### Нужна ли отдельная русская сборка ZCode
 
